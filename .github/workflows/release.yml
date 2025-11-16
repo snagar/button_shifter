@@ -420,7 +420,7 @@ jobs:
       
           echo -e "github.actor: ${{ github.actor }},  github.repository: ${{ github.repository }}"
           echo -e "\ngithub.ref - ${{ github.ref }} - ${{ github.ref_name }} \n"
-          #git remote add authenticated-origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git remote add authenticated-origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           #git remote add authenticated-origin "https://x-token-auth:ATCTT3xFfGN03WTMnoSKe5X5qDwhxRgnGd4QS_GZdaX1DjfXcsfzeb-XUY8YD-QrzHxOTZNODDxXI2jJ_LKlhN2EfzZsMq85-XnWC2sWxl9-vP3JuDJBPyO0ucTYTG2i4pCJ64Q8s57GRfs7a9-fkFAmIn5J2Br2bEJRZIBH9j3I5id01w73HGQ=27C63925@bitbucket.org/snagar/button_shifter.git"
       
           echo -e "\nPushing ${TARGET_BRANCH}\n---------------------"

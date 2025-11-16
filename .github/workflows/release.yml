@@ -96,7 +96,7 @@ jobs:
         run: |
           echo "build-output-dir=${{ github.workspace }}/cmake_build" >> "$GITHUB_OUTPUT"
           echo "target-folder=${{ github.workspace }}/release/lin_x64" >> "$GITHUB_OUTPUT"
-          echo "plugin-name=missionx" >> "$GITHUB_OUTPUT"
+          echo "plugin-name=button_shifter" >> "$GITHUB_OUTPUT"
           
           echo "OS Build: ${{ matrix.os }}"
           

@@ -322,8 +322,8 @@ jobs:
 
     runs-on: ubuntu-latest
     # if: ( 1 == 2 )
-    needs: [ build-lin ]
-    # needs: [ pre-build, build-win, build-osx, build-lin ]
+    #needs: [ build-lin ]
+    needs: [ pre-build, build-win, build-osx, build-lin ]
     # Steps to download artifact and combine to final build
     steps:
       - uses: actions/checkout@v4

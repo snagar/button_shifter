@@ -103,11 +103,11 @@ add_library(${PROJECT_NAME} SHARED
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 #endif()
 
-if (APPLE)
-  # We will aim to MacOS version 11.0 and up
-  target_compile_options(${PROJECT_NAME} PUBLIC -mmacosx-version-min=11.0)
-#  target_link_libraries(${PROJECT_NAME} -mmacosx-version-min=11.0)
-endif ()
+#if (APPLE)
+#  # We will aim to MacOS version 11.0 and up
+#  target_compile_options(${PROJECT_NAME} PUBLIC -mmacosx-version-min=11.0)
+##  target_link_libraries(${PROJECT_NAME} -mmacosx-version-min=11.0)
+#endif ()
 
 
 
@@ -271,12 +271,20 @@ if (WIN32)
 
 elseif (APPLE)
   message(">> Apple linking.")
-  target_link_libraries(${PROJECT_NAME} PRIVATE stdc++ ) # or libc++ on macOS/Clang
-  target_link_libraries(${PROJECT_NAME} PRIVATE -mmacosx-version-min=11.0)
+  # Set minimum macOS deployment target
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
+  # Add compile options
+  target_compile_options(${PROJECT_NAME} PRIVATE
+          -Wno-c++11-narrowing
+  )
+  # Add linker options
+  target_link_options(${PROJECT_NAME} PRIVATE
+          -v
+          -exported_symbols_list ${CMAKE_SOURCE_DIR}/build/${PROJECT_NAME}.sym_mac
+          -Wl,-rpath,@loader_path/
+  )
+
   target_link_libraries(${PROJECT_NAME} PRIVATE
-          "-v -exported_symbols_list ${CMAKE_SOURCE_DIR}/build/${PROJECT_NAME}.sym_mac"
-          "-Wl,-rpath,./Resources/plugins/button_shifter/"
-          "-Wno-c++11-narrowing"
           "-framework ApplicationServices"
           "-framework Foundation"
           "-framework Security"

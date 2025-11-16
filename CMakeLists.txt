@@ -106,7 +106,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 if (APPLE)
   # We will aim to MacOS version 11.0 and up
   target_compile_options(${PROJECT_NAME} PUBLIC -mmacosx-version-min=11.0)
-  target_link_libraries(${PROJECT_NAME} -mmacosx-version-min=11.0)
+#  target_link_libraries(${PROJECT_NAME} -mmacosx-version-min=11.0)
 endif ()
 
 
@@ -151,6 +151,7 @@ else()
   message ("Adding release optimization -O3")
   add_compile_options(-O3)
   add_compile_options(-g0)
+  message ("After Adding release optimization -O3")
 endif()
 
 if ( NOT MSVC )
@@ -271,6 +272,7 @@ if (WIN32)
 elseif (APPLE)
   message(">> Apple linking.")
   target_link_libraries(${PROJECT_NAME} PRIVATE stdc++ ) # or libc++ on macOS/Clang
+  target_link_libraries(${PROJECT_NAME} PRIVATE -mmacosx-version-min=11.0)
   target_link_libraries(${PROJECT_NAME} PRIVATE
           "-v -exported_symbols_list ${CMAKE_SOURCE_DIR}/build/${PROJECT_NAME}.sym_mac"
           "-Wl,-rpath,./Resources/plugins/button_shifter/"

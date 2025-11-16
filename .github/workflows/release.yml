@@ -6,9 +6,9 @@ on:
     tags:
       - '*'
   # Allows you to run this workflow manually from the Actions tab
-permissions:
-  contents: write
-#  workflow_dispatch:
+# permissions:
+#   contents: write
+  workflow_dispatch:
 
 jobs:
   pre-build:
@@ -247,7 +247,7 @@ jobs:
     runs-on: windows-latest
     needs: [pre-build]
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os: [windows-latest]
         build_type: [ Release ]
@@ -257,7 +257,7 @@ jobs:
     steps:
 
       - uses: actions/checkout@v4
-
+  
       - name: Set Windows reusable strings
         id: strings
         shell: bash
@@ -319,7 +319,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     # if: ( 1 == 2 )
-    needs: [ pre-build, build-win, build-osx, build-lin ]
+    needs: [ pre-build, build-osx, build-lin, build-win ]
     # Steps to download artifact and combine to final build
     steps:
       - uses: actions/checkout@v4

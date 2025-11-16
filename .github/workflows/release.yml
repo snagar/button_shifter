@@ -132,3 +132,24 @@ jobs:
       - name: Build
         # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -- -j 2
+
+      - name: Post Build - Prepare binaries folder for before loading into artifact
+        shell: bash
+        run: |
+          echo "prepare release folder"
+          mkdir -p ${{ steps.strings.outputs.target-folder }}
+          
+          echo -e "Output directory structure"
+          find ${{ steps.strings.outputs.build-output-dir }} -maxdepth 2 -type f -name "*.xpl"
+          # find ${{ steps.strings.outputs.build-output-dir }}
+          
+          echo -e "\nChange directory to build folder:\n"
+          cd ${{ steps.strings.outputs.build-output-dir }}
+          echo -e "--->"
+          ls -l
+          echo "<--- List of the files in the output dir\n"
+          echo -e "Copy binary file"
+          cp "${{ steps.strings.outputs.plugin-name }}.xpl" "${{ steps.strings.outputs.target-folder }}/"
+          
+          echo -e "Display Release Structure:"
+          ls -ltR ${{ github.workspace }}/release        

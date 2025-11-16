@@ -51,8 +51,7 @@ A button that was bind to a "custom command number", will always fire that line 
 How it looks in x-plane command screen:
 -
 **Example 1** - Binding to a group of buttons will be represented as:  
-#1 = Represents set group number "1" defined as: 
-"button_shift/step_1_map_shift_buttons/shift_1".
+#1 = Represents set group number "1" defined as: "button_shift/step_1_map_shift_buttons/shift_1".
 
 **Example 2** - Binding a "Custom Command" line to a button:  
 "button_shifter/step_2_map_a_button_to_a_command/command_0" (Custom Command 0).

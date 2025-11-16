@@ -313,3 +313,146 @@ jobs:
           path: |
             ${{ github.workspace }}/release/*
 
+  build:
+    runs-on: ubuntu-latest
+    # if: ( 1 == 2 )
+    # needs: [ build-lin ]
+    needs: [ pre-build, build-win, build-osx, build-lin ]
+    # Steps to download artifact and combine to final build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set build reusable strings
+        # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/release/button_shifter" >> "$GITHUB_OUTPUT"
+          echo "plugin-name=button_shifter" >> "$GITHUB_OUTPUT"
+          echo "OS Build: ${{ matrix.os }}"
+          
+          echo "global-tag-type: ${{ needs.pre-build.outputs.global-tag-type }}
+          echo "global-special-build_text: ${{ needs.pre-build.outputs.global-special-build_text }}
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./download
+
+
+      - name: Prepare release folder
+        shell: bash
+        run: |
+          echo -e "Display download folder content"
+          ls -ltR ./download
+          
+          echo -e "Create the build folder"
+          mkdir -p ${{ steps.strings.outputs.build-output-dir }}
+          echo -e "\n\nDisplay build folders before copy:\n\n"
+          ls -ltR ${{ steps.strings.outputs.build-output-dir }}
+          
+          echo "copy folders"
+          cp -rdp ./download/*/*_x64 ${{ steps.strings.outputs.build-output-dir }}          
+          
+          echo -e "\n\nDisplay after folders before copy:\n\n"
+          ls -ltR ${{ steps.strings.outputs.build-output-dir }}
+          
+          rm -rf ./download
+          
+
+      - name: Prepare Release Branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          
+          #TARGET_BRANCH="${{ needs.pre-build.outputs.global-tag-type }}"
+          
+          TARGET_BRANCH="release"
+          
+          echo -e "\nThe target branch is: '$TARGET_BRANCH'\n"
+
+          cd "release"
+          ## Create target branch
+          echo -e "Create the new branch: $TARGET_BRANCH"
+          git checkout -b ${TARGET_BRANCH}
+        
+          # Internal use, Adding version tag, so we know which binary version is it.
+          echo "${{ github.ref_name }}" > ${{ steps.strings.outputs.build-output-dir }}/build.log                    
+          echo -e "`date`" > ${{ steps.strings.outputs.build-output-dir }}/build_date.log
+          
+          [ -d ${{ steps.strings.outputs.build-output-dir }}/win_x64 ] && echo "${{ github.ref_name }}" > ${{ steps.strings.outputs.build-output-dir }}/win_x64/build.log                    
+          [ -d ${{ steps.strings.outputs.build-output-dir }}/lin_x64 ] && echo "${{ github.ref_name }}" > ${{ steps.strings.outputs.build-output-dir }}/lin_x64/build.log                    
+          [ -d ${{ steps.strings.outputs.build-output-dir }}/mac_x64 ] && echo "${{ github.ref_name }}" > ${{ steps.strings.outputs.build-output-dir }}/mac_x64/build.log                    
+        
+          echo -e "Configuring git before pushing branch '${TARGET_BRANCH}' ."
+          git config --global user.email "snagar.dev@protonmail.com"
+          git config --global user.name "snagar"
+        
+          echo -e "--- Display Branches ---"
+          git branch -a
+        
+          echo "--- display folders ---"
+          ls -lR
+          echo "-----"
+          echo "Adding files to branch: ${TARGET_BRANCH}"
+          git add .
+          echo -e "\n---- git status ---->"
+          git status
+          echo -e "\n<---------"
+        
+          # Push the branch back.. or not
+          if [[ "$TARGET_BRANCH" == "release" ]]; then
+            echo -e "Adding GH (Github Client) information."
+            gh ${TARGET_BRANCH} create "${{ github.ref_name }}" --title "$TARGET_BRANCH: ${{ github.ref_name }}" --notes-file ${{ github.workspace }}/notes.md
+          fi
+          
+          echo -e "\nCommit branch ${TARGET_BRANCH}\n---------------------"
+          git commit -m "new ${TARGET_BRANCH} - ${{ github.ref_name }}"
+      
+          echo -e "github.actor: ${{ github.actor }},  github.repository: ${{ github.repository }}"
+          echo -e "\ngithub.ref - ${{ github.ref }} - ${{ github.ref_name }} \n"
+          git remote add authenticated-origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+      
+          echo -e "\nPushing ${TARGET_BRANCH}\n---------------------"
+          git push authenticated-origin ${TARGET_BRANCH} --force
+      
+          echo -e "TARGET_BRANCH - ${TARGET_BRANCH}"
+          echo -e "\ngithub.ref - ${{ github.ref }}, name: ${{ github.ref_name }} \n"
+          git branch -a
+
+      - name: Prepare Compressed Binary Files
+        # if: ( startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'b') || startsWith(github.ref_name, 't') || contains(github.ref_name, '-release') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-test') )
+        shell: bash
+        run: |
+          # Prepare the release compressed file
+          echo -e "\nVERSION=${{ github.ref_name }}\n"
+          
+          dt=$(date +"%Y-%m-%d_%H-%M")
+          
+          folder_to_compress="${{ github.workspace }}/release"
+          output_file="${{ github.workspace }}/${{ steps.strings.outputs.plugin-name }}_${dt}.7z"
+          split_size="90m"
+          
+          echo "Compressing '$folder_to_compress' to '$output_file'..."
+          (cd ./release && 7z a -t7z "${{ github.workspace }}/${{ steps.strings.outputs.plugin-name }}_${dt}.7z" *)
+          # (cd ./release && 7z a -t7z -v"$split_size" "${{ github.workspace }}/${{ steps.strings.outputs.plugin-name }}-${{ github.ref_name }}.7z" *)
+          
+          echo -e "\n---------"
+          ls -l
+          echo -e "\n---------"        
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        # if: ( startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'b') || startsWith(github.ref_name, 't') || contains(github.ref_name, '-release') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-test') )
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            ${{ github.workspace }}/notes.md
+            ${{ github.workspace }}/${{ steps.strings.outputs.plugin-name }}*7z*
+          #prerelease: ${{ contains(github.ref_name, '-beta') || startsWith(github.ref_name, 'b') }}
+          

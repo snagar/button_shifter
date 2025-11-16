@@ -1,0 +1,72 @@
+# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
+name: release - multi platform
+on:
+  push:
+    tags:
+      - '*'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  pre-build:
+    #if: ( 1 == 2 )
+    runs-on: ubuntu-latest
+    outputs:
+      global-tag-type: ${{ steps.strings.outputs.global-tag-type }}
+      global-special-build_text: ${{ steps.strings.outputs.global-special-build_text }}
+      global-subversion-text: ${{ steps.strings.outputs.global-subversion-text }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set global reusable strings
+        # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+        id: strings
+        shell: bash
+        run: |
+          TARGET_BRANCH="dry-run"
+          VERSION_HPP="#define SPECIAL_BUILD"
+          VERSION=${{ github.ref_name }}  # Could also used: ${GITHUB_REF##*/}
+          echo "\nCurrent TAG Version: ${VERSION}\n"
+          
+          if [[ $VERSION == *"-test"* || $VERSION == t* ]] # if TAG contains -test or starts with "t"
+          then
+            echo "This is a just a test build"
+            TARGET_BRANCH="build-test"
+          elif [[ $VERSION == *"-beta"* || $VERSION == b* ]] # if TAG contains -beta or starts with "b"
+          then
+            echo "This is a beta release"
+            TARGET_BRANCH="beta"
+          elif [[ $VERSION == v* || $VERSION == *"-release"*  ]] # if TAG starts with "v" or contains -release
+          then
+            echo "This is a 'release'."
+            TARGET_BRANCH="release"
+          fi
+          
+          echo -e "github.ref_name = ${{ github.ref_name }}"
+          subversion_text=""
+          if [[ ${{ github.ref_name }} =~ -beta(.*) ]]; then
+            subversion_text="${BASH_REMATCH[1]}"
+            echo "Found '-beta', extracted: '$subversion_text'"
+          elif [[ ${{ github.ref_name }} =~ -test(.*) ]]; then
+            subversion_text="${BASH_REMATCH[1]}"
+            echo "Found '-test', extracted: '$subversion_text'"
+          fi
+          subversion_text="${subversion_text// }" # Remove all spaces
+          
+          echo "global-tag-type=\"$TARGET_BRANCH\"" >> "$GITHUB_OUTPUT"
+          echo "global-subversion-text=$subversion_text" >> "$GITHUB_OUTPUT"
+          echo "global-special-build_text=\"#define SPECIAL_BUILD\" " >> "$GITHUB_OUTPUT"
+          
+          echo -e "VERSION_HPP: $VERSION_HPP"
+          echo -e "subversion_text: '$subversion_text'"
+
+      - name: Check Variable
+        shell: bash
+        run: |
+          echo -e "\nGlobal Variable value for 'global-tag-type' is: ${{ steps.strings.outputs.global-tag-type }} "
+          echo -e "\nGlobal Variable value for 'global-special-build_text' is: ${{ steps.strings.outputs.global-special-build_text }} "
+          echo -e "\nGlobal Variable value for 'global-subversion-text' is: ${{ steps.strings.outputs.global-subversion-text }} "
+  

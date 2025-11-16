@@ -406,7 +406,7 @@ jobs:
           # Push the branch back.. or not
           if [[ "$TARGET_BRANCH" == "release" ]]; then
             echo -e "Adding GH (Github Client) information."
-            gh ${TARGET_BRANCH} create "${{ github.ref_name }}" --title "$TARGET_BRANCH: ${{ github.ref_name }}" --notes-file ${{ github.workspace }}/notes.md
+            gh ${TARGET_BRANCH} create "${{ github.ref_name }}" --title "$TARGET_BRANCH: ${{ github.ref_name }}" --notes-file ${{ github.workspace }}/README.md
           fi
           
           echo -e "\nCommit branch ${TARGET_BRANCH}\n---------------------"
@@ -452,7 +452,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            ${{ github.workspace }}/notes.md
+            ${{ github.workspace }}/README.md
             ${{ github.workspace }}/${{ steps.strings.outputs.plugin-name }}*7z*
           #prerelease: ${{ contains(github.ref_name, '-beta') || startsWith(github.ref_name, 'b') }}
           

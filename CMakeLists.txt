@@ -69,33 +69,10 @@ string (TOLOWER ${CMAKE_BUILD_TYPE} BUILD_TYPE_LOWERCASE) ## store the build typ
 
 include_directories("${CMAKE_SOURCE_DIR}/libs/SDK/CHeaders/XPLM")
 include_directories("${CMAKE_SOURCE_DIR}/libs/SDK/CHeaders/Widgets")
-include_directories("${CMAKE_SOURCE_DIR}/libs/SDK/CHeaders/Wrappers")
-include_directories("${CMAKE_SOURCE_DIR}/libs/curl/include")
-include_directories("${CMAKE_SOURCE_DIR}/libs/fmod/inc")
-include_directories("${CMAKE_SOURCE_DIR}/libs/json/include") ## nlohmann json lib
-include_directories("${CMAKE_SOURCE_DIR}/libs/imgui4xp")
-include_directories("${CMAKE_SOURCE_DIR}/libs/imgui4xp/imgui")
-include_directories("${CMAKE_SOURCE_DIR}/libs/imgui4xpKHR")
-include_directories("${CMAKE_SOURCE_DIR}/libs/imgui4xp/imgWindow")
-include_directories("${CMAKE_SOURCE_DIR}/libs/imgui4xp/colors")
-include_directories("${CMAKE_SOURCE_DIR}/libs/sqlite/sqlite")
-include_directories("${CMAKE_SOURCE_DIR}/libs/stb")
-include_directories("${CMAKE_SOURCE_DIR}/libs/fmt/include")
-include_directories("${CMAKE_SOURCE_DIR}/libs/polyline-cpp/src")
-include_directories("${CMAKE_SOURCE_DIR}/src/ui/core")
-include_directories("${CMAKE_SOURCE_DIR}/libs/freetype2/include")
-include_directories("${CMAKE_SOURCE_DIR}/libs/brotil/include")
-include_directories("${CMAKE_SOURCE_DIR}/libs/glm")
 
 if (LINUX)
   # ubuntu 22.04
   include_directories("/usr/include/x86_64-linux-gnu/")
-  include_directories("/usr/include/x86_64-linux-gnu/curl")
-  include_directories("/usr/include/x86_64-linux-gnu/openssl")
-
-
-elseif (WIN32)
-  include_directories("${CMAKE_SOURCE_DIR}/libs/OpenSSL/openssl-3xx/include")
 endif()
 
 set(BASE_SRC
@@ -152,24 +129,17 @@ endif()
 #endif()
 
 ## Enable other Mission-X flags
-add_definitions(-DIMGUI_INCLUDE_IMCONFIG_H -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DMB_DOUBLE_FLOAT)
-add_definitions(-Dglm_shared_EXPORTS -DFT2_BUILD_LIBRARY -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS)
-add_definitions(-DENABLE_EXPERIMENTAL_DISABLE)
+#add_definitions(-DIMGUI_INCLUDE_IMCONFIG_H -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DMB_DOUBLE_FLOAT)
+#add_definitions(-Dglm_shared_EXPORTS -DFT2_BUILD_LIBRARY -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS)
+#add_definitions(-DENABLE_EXPERIMENTAL_DISABLE)
 
 
 if ( ${BUILD_TYPE_LOWERCASE} STREQUAL "debug" )
   message("We are in debug - adding debug definition to compiler !!!!")
-  # add_definitions(-DDEBUG -DCMAKE_INTDIR="debug")
   add_definitions(-DDEBUG)
 elseif ( ${BUILD_TYPE_LOWERCASE} STREQUAL "release" )
   add_definitions(-DRELEASE)
 endif()
-
-# Visual Studio defines compiler switches via CMakeSettings.json
-if (WIN32)
-  add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
-  add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
-endif ()
 
 # Always use position-independent code and highest optimization level (FPS!).
 # Optimisation options
@@ -194,19 +164,15 @@ if ( NOT MSVC )
   # option is simply ignored, since symbol visibility works differently there.
   add_compile_options(-fvisibility=hidden)
 
-  # from eclipse project
-
   add_compile_options(-c -fmessage-length=0 -Wunused-function -Wno-narrowing)
 
   ## Add -fpermissive only for CXX compiler and not C
   target_compile_options(${PROJECT_NAME}  PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fpermissive> )
 
-
   # Enable stricter warnings and then disable some we are not interested in.
   #    add_compile_options(-Wall -Wpedantic -Wshadow -Wextra)
   add_compile_options(-Wall -Wpedantic -Wextra)
   add_compile_options(-Wno-unused)
-
 
   if (NOT WIN32)
     add_compile_options(-fPIC)
@@ -242,13 +208,6 @@ elseif (UNIX)
 
 endif ()
 
-
-
-### Link X-Plane plugin system libraries. They are only provided for OS X and Windows.
-#if (WIN32 OR APPLE)
-#  find_library(XPLM_LIBRARY NAMES XPLM XPLM_64.lib XPWidgets XPWidgets_64.lib)
-#  target_link_libraries(${PROJECT_NAME} ${XPLM_LIBRARY})
-#endif ()
 
 # ==========================
 # X-Plane SDK
@@ -294,9 +253,6 @@ if (WIN32 OR APPLE)
     )
   endif()  # end APPLE
 
-  ## Old code
-  # find_library(XPLM_LIBRARY NAMES XPLM XPLM_64.lib XPWidgets XPWidgets_64.lib)
-
 endif()
 
 # Linking by OS
@@ -309,7 +265,7 @@ if (WIN32)
     )
   else()
     message(">> non-msvc linking.")
-    target_link_libraries(${PROJECT_NAME} PRIVATE -static-libgcc -static-libstdc++ opengl32 -static)
+    target_link_libraries(${PROJECT_NAME} PRIVATE -static-libgcc -static-libstdc++ -static)
   endif()
 
 elseif (APPLE)
@@ -317,7 +273,7 @@ elseif (APPLE)
   target_link_libraries(${PROJECT_NAME} PRIVATE stdc++ ) # or libc++ on macOS/Clang
   target_link_libraries(${PROJECT_NAME} PRIVATE
           "-v -exported_symbols_list ${CMAKE_SOURCE_DIR}/build/${PROJECT_NAME}.sym_mac"
-          "-Wl,-rpath,./Resources/plugins/missionx/libs/64"
+          "-Wl,-rpath,./Resources/plugins/button_shifter/"
           "-Wno-c++11-narrowing"
           "-framework ApplicationServices"
           "-framework Foundation"
@@ -338,7 +294,7 @@ elseif (UNIX)
           "-Wl,-rpath,/lib64"
           "-Wl,-rpath,/lib/x86_64-linux-gnu"
           "-Wl,-rpath,/usr/lib/x86_64-linux-gnu"
-          "-Wl,-rpath,./Resources/plugins/missionx/libs/64"
+          "-Wl,-rpath,./Resources/plugins/button_shifter/"
   )
 endif()
 

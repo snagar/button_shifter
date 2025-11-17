@@ -356,7 +356,10 @@ jobs:
           ls -ltR ${{ steps.strings.outputs.build-output-dir }}
           
           echo "copy folders"
-          cp -rdp ./download/*/*_x64 ${{ steps.strings.outputs.build-output-dir }}          
+          cp -rdp ./download/*/*_x64 ${{ steps.strings.outputs.build-output-dir }}
+          
+          # Copy template config file
+          cp -p libs/config*.shift ${{ steps.strings.outputs.build-output-dir }}
           
           echo -e "\n\nDisplay after folders before copy:\n\n"
           ls -ltR ${{ steps.strings.outputs.build-output-dir }}

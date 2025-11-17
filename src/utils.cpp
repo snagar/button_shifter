@@ -98,8 +98,10 @@ utils::list_state_files (const std::string &plugin_folder_path)
         if (file)
         {
 
+          #ifndef RELEASE
           bool is_ascii = is_ascii_file (entry.path ());
-          if (is_ascii)
+          #endif           
+          //if (is_ascii) // ignore
           {
             strct::st_state_file st_file;
             st_file.file_name      = entry.path ().filename ().string ();

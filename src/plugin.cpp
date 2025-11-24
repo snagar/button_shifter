@@ -16,9 +16,9 @@ namespace shifter
   // Constructor / Destructor
   // ---------------------------------------------------------------------
   plugin::plugin()
-      : name_("Button Shifter v0.1"),
+      : name_("Button Shifter"),
         signature_("button_shifter.snagar.dev"),
-        description_("A custom Joystick button enabler")
+        description_("v0.2 - A custom Joystick button enabler")
   {
 
   }

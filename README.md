@@ -1,15 +1,18 @@
 # Button Shifter Plugin
 
 > Written by Saar N.
-> Version v0.1
+> Version v0.2
 
 Thank you for trying the **Button Shifter** plugin.
 
 The purpose of this plugin is to help you make better use of your joystick buttons by allowing the same physical button to perform different actions.
 
-This is done by combining **“shift buttons”** with **“custom action” buttons**, all of which you configure in a plain-text configuration file.
+This is done by combining **“custom shift buttons”** with **“custom action buttons"**, all of which you configure in a plain-text configuration file.
 
 As of this release, the plugin supports up to **6 (six)** shift buttons, each defining a separate set of custom commands. Within each set, you can define up to **10 (ten)** custom commands.
+
+As of v0.2, the plugin will enable the first config file in the list (ordered by file name), and the first "set."
+Make sure that your "favorite" or "default" configuration file will be sorted as the first one in the list.
 
 ### Donation
 
@@ -79,11 +82,11 @@ A button bound to a *custom command number* will always trigger the correspondin
 `#1 = "button_shifter/step_1_map_shift_buttons/shift_N"`
 
 **Example 2 — Binding a custom command to a button:**
-`button_shifter/step_2_map_a_button_to_a_command/command_0`
-(Custom Command 0)
+`button_shifter/step_2_map_a_button_to_a_command/command_0` (Custom Command 0)
 
 Every command line should include a button type: **hold** or **tick**.
 * *tick* means a one-time press (default).
+* If you want to set a command as "hold", make sure that the button you will use, can support it. Example: a knob can't support a hold type.
 
 **Command line numbering starts at “0” and goes up to “9”.**
 
@@ -107,15 +110,17 @@ In this example
 ---
 
 ## Usage Example
-
+### Setup your buttons / keys
 * [ ] Start X-Plane.
 * [ ] Open **Settings → Joystick**.
 * [ ] Choose one or more *shift buttons* to switch between sets.
-
   * [ ] Look for commands that start with `button_shifter` (you do not need to map all shift options).
+
 * [ ] Map the buttons that you want to behave differently depending on the shift state. Don’t overdo it—this is typically useful for only one or two special buttons.
 * [ ] Write down the command numbers you assigned. Remember: **command 0 = first line in the set**, and so on.
-* [ ] You do **not** need to map all commands—only the ones you need.
+* [ ] You do **not** need to map all commands, map only the ones you need.
+
+
 * [ ] Create your own `.shift` file and define what each command line should do. Ensure the *command numbers* match the *line numbers* in each set.
 
 ---

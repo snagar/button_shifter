@@ -361,6 +361,7 @@ jobs:
           # Copy template config file
           cp -p libs/config*.shift ${{ steps.strings.outputs.build-output-dir }}
           cp -p README.md ${{ steps.strings.outputs.build-output-dir }}
+          cp -p build.log ${{ steps.strings.outputs.build-output-dir }}
           
           echo -e "\n\nDisplay after folders before copy:\n\n"
           ls -ltR ${{ steps.strings.outputs.build-output-dir }}

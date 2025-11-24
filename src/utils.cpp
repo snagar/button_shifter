@@ -98,10 +98,8 @@ utils::list_state_files (const std::string &plugin_folder_path)
         if (file)
         {
 
-          #ifndef RELEASE
           bool is_ascii = is_ascii_file (entry.path ());
-          #endif           
-          //if (is_ascii) // ignore
+          if (is_ascii)
           {
             strct::st_state_file st_file;
             st_file.file_name      = entry.path ().filename ().string ();
@@ -110,7 +108,6 @@ utils::list_state_files (const std::string &plugin_folder_path)
 
             ordered_file_list_set.insert (st_file.file_name);
 
-            auto index                         = map_state_files.size () - 1;
             map_state_files[st_file.file_name] = st_file;
           }
         } // end if "file" is valid
@@ -179,21 +176,6 @@ utils::parse_vector_of_strings_to_key_value_pairs (const std::vector<std::string
 
   return map_result;
 }
-
-// float
-// utils::GetFPS ()
-// {
-//   if (!gFrameRateDR)
-//   {
-//     gFrameRateDR = XPLMFindDataRef("sim/operation/misc/frame_rate_period");
-//     if (!gFrameRateDR) return 0.0f;
-//   }
-//
-//   float frameTime = XPLMGetDataf(gFrameRateDR);
-//   if (frameTime <= 0.0f) return 0.0f;
-//
-//   return 1.0f / frameTime;
-// }
 
 
 } // shifter

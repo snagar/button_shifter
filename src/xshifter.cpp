@@ -4,6 +4,8 @@
 
 #include "xshifter.h"
 
+#include <ranges>
+
 namespace shifter
 {
 
@@ -122,7 +124,7 @@ float xshifter::s_tick_period_every_milli_;
         XPLMCheckMenuItem (in_menu_id, item_state.menu_file_item_, item_state.check_state_);
 
       }
-    }
+    } // end loop over all configuration files
 
     shifter::xshifter::active_file_id = 0;
   }
@@ -147,7 +149,7 @@ float xshifter::s_tick_period_every_milli_;
       XPLMRegisterCommandHandler (xshifter::mapCommands_[code], xshifter::shift_change_set_handler, true, reinterpret_cast<void *> (code));
     }
 
-    // initialize the custom sub-commands to re-map your joystic button or keyboard
+    // initialize the custom sub-commands to re-map your joystick button or keyboard
     for (auto &code : shifter::g_shift_commands)
     {
       xshifter::mapCmdCustomCommand_[code] = XPLMCreateCommand (std::format ("{}{}", shifter::g_prefix_shift_custom_cmd_text, code).c_str (), std::format ("Custom Command Line {}", code).c_str ());
@@ -183,10 +185,13 @@ float xshifter::s_tick_period_every_milli_;
     xshifter::menu_.menu_config_ = XPLMAppendMenuItem (xshifter::menu_.plugin_main_entry_menuid_, "Config", reinterpret_cast<void *> (shifter::enums::menuIdRefs::MENU_ENTRY_CONFIG), 1);
     xshifter::menu_.ui_config_sub_menuid_ = XPLMCreateMenu ("Config Options", xshifter::menu_.plugin_main_entry_menuid_, xshifter::menu_.menu_config_, xshifter::menu_config_handler, reinterpret_cast<void *> (shifter::enums::menuIdRefs::UI_SUB_MENU_CONFIG)); // no handling function
     // Add "config" menu sub items
-    auto add_item_result = XPLMAppendMenuItem (xshifter::menu_.ui_config_sub_menuid_, "Reload \"*.shift\" files", reinterpret_cast<void *> (shifter::enums::menuIdRefs::UI_SUB_MENU_CONFIG_REFRESH_STATE_FILE_LIST), 1);
+    XPLMAppendMenuItem (xshifter::menu_.ui_config_sub_menuid_, "Reload \"*.shift\" files", reinterpret_cast<void *> (shifter::enums::menuIdRefs::UI_SUB_MENU_CONFIG_REFRESH_STATE_FILE_LIST), 1);
 
-
+    // reset active file
     shifter::xshifter::active_file_id = 0;
+
+    // v0.2
+    pick_the_first_config_file();
 
     return true;
   }
@@ -223,12 +228,38 @@ float xshifter::s_tick_period_every_milli_;
     {
       // Add all state configuration files
       xshifter::init_ui_state_sub_menu (xshifter::menu_.ui_states_sub_menuid_);
-      XPLMEnableMenuItem (xshifter::menu_.plugin_main_entry_menuid_, xshifter::menu_.menu_available_states_, false); // disable the menu
+      // disable the menu
+      XPLMEnableMenuItem (xshifter::menu_.plugin_main_entry_menuid_, xshifter::menu_.menu_available_states_, false);
+
+      pick_the_first_config_file();
     }
   }
 
+// --------------------
+
+void
+xshifter::pick_the_first_config_file ()
+{
+  if (!map_states_.empty () && map_states_.size () > 1)
+  {
+    // get the second iteration in the map
+    auto iter = map_states_.cbegin ();
+    ++iter; // increment iterator to the second item
+    const auto item_id = iter->first;
+
+    // Call the file-picked menu function to set the configuration file menu
+    menu_file_picked_by_user_handler (nullptr, reinterpret_cast<void *> (item_id));
+  }
+  else
+  {
+    active_file_id = 0;
+    XPLMEnableMenuItem (xshifter::menu_.plugin_main_entry_menuid_, xshifter::menu_.menu_available_states_, false); // disable the menu
+  }
+}
+
   // --------------------
   
+
   void
   xshifter::menu_file_picked_by_user_handler (void *inMenuRef, void *inItemRef)
   {
@@ -236,12 +267,13 @@ float xshifter::s_tick_period_every_milli_;
 
     if (map_states_.contains (static_cast<long long> (item_id)))
     {
+      auto p_state = &map_states_[static_cast<long long> (item_id)];
       xshifter::active_file_id = static_cast<int> (item_id);
 
-      if (xshifter::map_states_[item_id].check_state_ != xplm_Menu_Checked)
+      if (p_state->check_state_ != xplm_Menu_Checked)
       {
         // uncheck all items in menu and then check the picked one
-        for (auto &[index, state_item] : xshifter::map_states_)
+        for (auto &state_item : xshifter::map_states_ | std::views::values)
         {
           if (state_item.check_state_ == xplm_Menu_Checked)
           {
@@ -251,25 +283,27 @@ float xshifter::s_tick_period_every_milli_;
         }
 
         // Check the item
-        xshifter::map_states_[item_id].check_state_ = xplm_Menu_Checked;
-        XPLMCheckMenuItem (xshifter::menu_.ui_states_sub_menuid_, xshifter::map_states_[item_id].menu_file_item_, xplm_Menu_Checked);
+        p_state->check_state_ = xplm_Menu_Checked;
+        XPLMCheckMenuItem (xshifter::menu_.ui_states_sub_menuid_, p_state->menu_file_item_, xplm_Menu_Checked);
 
         // initialize the "available states" menu based on the "item_id"
         XPLMClearAllMenuItems( xshifter::menu_.ui_available_set_sub_menuid_ );
-        if (!xshifter::map_states_[item_id].map_command_sets_.empty ())
+        if (!p_state->map_command_sets_.empty ())
         {
           int counter = 1;
-          for (auto& [key_set_number, strct_set] : xshifter::map_states_[item_id].map_command_sets_ )
+          for (auto& [key_set_number, strct_set] : p_state->map_command_sets_ )
           {
             strct_set.reset_ui_info (); // we reset the menu index
             if (xshifter::mapCommands_.contains (key_set_number))
             {
               const auto lmbda_get_set_name = [&]()
               {
-                if (strct_set.custom_commands.contains (shifter::g_shift_button_key_number) && strct_set.custom_commands[shifter::g_shift_button_key_number].contains ("name"))
+                const bool we_have_custom_commands_at_set_level = strct_set.custom_commands.contains (shifter::g_shift_button_key_number);
+                const bool we_have_name_attribute_at_the_set_level = strct_set.custom_commands[shifter::g_shift_button_key_number].contains ("name");
+                if ( we_have_custom_commands_at_set_level && we_have_name_attribute_at_the_set_level )
                   return std::format ("Set #{} - {:.30}", key_set_number, strct_set.custom_commands[shifter::g_shift_button_key_number]["name"]);
 
-                return std::format ("Set #{}",key_set_number);
+                return std::format ("Set #{}", key_set_number);
               };
 
               const std::string set_name = lmbda_get_set_name ();
@@ -277,14 +311,14 @@ float xshifter::s_tick_period_every_milli_;
               if (counter == 1)
               {
                 strct_set.check_state_ = xplm_Menu_Checked;
-                XPLMCheckMenuItem (xshifter::menu_.ui_available_set_sub_menuid_, xshifter::map_states_[item_id].map_command_sets_.begin()->second.set_menu_index, xplm_Menu_Checked);
+                XPLMCheckMenuItem (xshifter::menu_.ui_available_set_sub_menuid_, p_state->map_command_sets_.begin()->second.set_menu_index, xplm_Menu_Checked);
               }
               counter++;
             }
           }
 
           // store active set number
-          xshifter::active_set_id = xshifter::map_states_[item_id].map_command_sets_.begin()->first; // should be Zero
+          xshifter::active_set_id = p_state->map_command_sets_.begin()->first; // should be Zero
 
           XPLMEnableMenuItem (xshifter::menu_.plugin_main_entry_menuid_, xshifter::menu_.menu_available_states_, true); // enable the menu
         }
@@ -305,27 +339,28 @@ float xshifter::s_tick_period_every_milli_;
 
     if (inPhase == xplm_CommandBegin && new_set_id != xshifter::active_set_id)
     {
-      #ifndef RELEASE
-      auto b_contain = xshifter::map_states_[active_file_id].map_command_sets_.contains (new_set_id); // debug
-      #endif
-      if (xshifter::map_states_[active_file_id].map_command_sets_.contains (new_set_id) && xshifter::map_states_[active_file_id].map_command_sets_[new_set_id].check_state_ != xplm_Menu_Checked)
+      if (xshifter::map_states_.contains (active_file_id))
       {
-        // uncheck all items in menu and then check the picked one
-        for (auto &[set_id, strct_set] : xshifter::map_states_[active_file_id].map_command_sets_)
+        auto p_state = &xshifter::map_states_[xshifter::active_file_id];
+        if (p_state->map_command_sets_.contains (new_set_id) && p_state->map_command_sets_[new_set_id].check_state_ != xplm_Menu_Checked)
         {
-          if (strct_set.check_state_ == xplm_Menu_Checked)
+          // uncheck all items in menu and then check the picked one
+          for (auto &strct_set : p_state->map_command_sets_ | std::views::values)
           {
-            strct_set.check_state_ = xplm_Menu_Unchecked;
-            XPLMCheckMenuItem (xshifter::menu_.ui_available_set_sub_menuid_, strct_set.set_menu_index, xplm_Menu_Unchecked);
+            if (strct_set.check_state_ == xplm_Menu_Checked)
+            {
+              strct_set.check_state_ = xplm_Menu_Unchecked;
+              XPLMCheckMenuItem (xshifter::menu_.ui_available_set_sub_menuid_, strct_set.set_menu_index, xplm_Menu_Unchecked);
+            }
           }
+
+          // Check the item
+          p_state->map_command_sets_[new_set_id].check_state_ = xplm_Menu_Checked;
+          XPLMCheckMenuItem (xshifter::menu_.ui_available_set_sub_menuid_, p_state->map_command_sets_[new_set_id].set_menu_index, xplm_Menu_Checked);
+
+          active_set_id = new_set_id;
         }
-
-        // Check the item
-        xshifter::map_states_[active_file_id].map_command_sets_[new_set_id].check_state_ = xplm_Menu_Checked;
-        XPLMCheckMenuItem (xshifter::menu_.ui_available_set_sub_menuid_, xshifter::map_states_[active_file_id].map_command_sets_[new_set_id].set_menu_index, xplm_Menu_Checked);
-
-        active_set_id = new_set_id;
-      }
+      } // end is config file "state" is available
     }
     
     return 1;
@@ -344,11 +379,13 @@ float xshifter::s_tick_period_every_milli_;
 
       if (xshifter::map_states_.contains (xshifter::active_file_id) && xshifter::map_states_[xshifter::active_file_id].map_command_sets_.contains (active_set_id))
       {
+        auto p_state = &xshifter::map_states_[xshifter::active_file_id];
+
         // check vector has commands
-        if ( ! xshifter::map_states_[xshifter::active_file_id].map_command_sets_[active_set_id].custom_commands.empty ()
-            && xshifter::map_states_[xshifter::active_file_id].map_command_sets_[active_set_id].custom_commands.contains ( command_number ) )
+        if ( ! p_state->map_command_sets_[active_set_id].custom_commands.empty ()
+            && p_state->map_command_sets_[active_set_id].custom_commands.contains ( command_number ) )
         {
-          auto *meta_command_map_ptr = &xshifter::map_states_[xshifter::active_file_id].map_command_sets_[active_set_id].custom_commands[command_number];
+          auto meta_command_map_ptr = &p_state->map_command_sets_[active_set_id].custom_commands[command_number];
           if (meta_command_map_ptr && !meta_command_map_ptr->empty () && meta_command_map_ptr->contains (shifter::attrib_cmd))
           {
             const auto& command_ptr = (*meta_command_map_ptr)[shifter::attrib_cmd];
@@ -381,7 +418,7 @@ float xshifter::s_tick_period_every_milli_;
       if (xshifter::s_current_command_button_type_ == shifter::button_type_hold && time_passed >= xshifter::s_tick_period_every_milli_)
       {
         XPLMCommandOnce (xshifter::s_current_command_ref_); // tick
-        // resetart the last tick timer
+        // restart the last tick timer
         Timer::start (xshifter::s_hold_timer_last_tick);
       }
     }

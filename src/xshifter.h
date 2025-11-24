@@ -52,7 +52,7 @@ namespace shifter
     // --------------------
     static void init_states_from_config_files ();
     static void ui_check_menu_item (XPLMMenuID &in_menuid, const int & in_item_count, const int & in_index_to_check );
-
+    static void pick_the_first_config_file();
     // --------------------
     // --------------------
   public:
@@ -77,7 +77,6 @@ namespace shifter
     static int shift_change_set_handler (XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void *inRefcon);
     static int shift_cmd_custom_button_handler (XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void *inRefcon);
     static float m_pluginCallback (float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter, void *inRefcon); // fcb
-    // static int m_drawCallback (XPLMDrawingPhase inPhase, int inIsBefore, void *inRefcon); // dcb
 
   };
 } // shifter

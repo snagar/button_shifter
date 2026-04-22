@@ -67,22 +67,29 @@ bool utils::is_number(const std::string_view s, double &out_value)
 {
   out_value = 0.0;
 
-  #ifdef MAC
   if ( utils::is_number_v2 (s) )
   {
     out_value = utils::stringToNumber <double>(s.data ());
     return true;
   }
   return false;
-  #else
-  // The compiler automatically chooses the floating-point overload
-  auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), out_value);
 
-  // ec == std::errc{} means "No Error"
-  // ptr == s.data() + s.size() means "We consumed the whole string"
-  return ec == std::errc{} && ptr == s.data() + s.size();
-
-  #endif
+  // #ifdef MAC
+  // if ( utils::is_number_v2 (s) )
+  // {
+  //   out_value = utils::stringToNumber <double>(s.data ());
+  //   return true;
+  // }
+  // return false;
+  // #else
+  // // The compiler automatically chooses the floating-point overload
+  // auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), out_value);
+  //
+  // // ec == std::errc{} means "No Error"
+  // // ptr == s.data() + s.size() means "We consumed the whole string"
+  // return ec == std::errc{} && ptr == s.data() + s.size();
+  //
+  // #endif
 }
 
 bool

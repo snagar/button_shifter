@@ -15,7 +15,7 @@ namespace shifter
   {
     private:
     // for each config file we should create a submenu
-    static std::map<size_t, shifter::strct::st_state_file> map_list_state_files_;
+    static std::map<size_t, shifter::strct::strct_state_file> map_list_state_files_;
 
     // commands
     static std::map<intptr_t, XPLMCommandRef> mapCommands_;
@@ -75,6 +75,9 @@ namespace shifter
     static void menu_config_handler(void *inMenuRef, void *inItemRef);
     static void menu_file_picked_by_user_handler(void *inMenuRef, void *inItemRef);
     static int shift_change_set_handler (XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void *inRefcon);
+
+    static void handle_dataref (shifter::strct::st_command_ref &inout_command);
+    static void handle_command (shifter::strct::st_command_ref &inout_command);
     static int shift_cmd_custom_button_handler (XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void *inRefcon);
     static float m_pluginCallback (float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter, void *inRefcon); // fcb
 

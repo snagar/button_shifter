@@ -12,7 +12,7 @@ cmake_minimum_required(VERSION 3.20)
 ##  https://developer.apple.com/documentation/apple-silicon/porting-your-macos-apps-to-apple-silicon
 ## https://cmake.org/cmake/help/latest/prop_tgt/ENABLE_EXPORTS.html
 
-project(button_shifter LANGUAGES C CXX VERSION 0.25.10 DESCRIPTION "Button Shifter X-Plane plugin v25.x")
+project(button_shifter LANGUAGES C CXX VERSION 0.26.04 DESCRIPTION "Button Shifter X-Plane plugin v26.x")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

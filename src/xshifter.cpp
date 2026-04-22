@@ -14,7 +14,7 @@ int                                             xshifter::active_file_id{ 0 };
 intptr_t                                        xshifter::active_set_id{ 0 };
 xshifter::strct_menu                            xshifter::menu_;
 std::map<size_t, shifter::state>                xshifter::map_states_;
-std::map<size_t, shifter::strct::st_state_file> xshifter::map_list_state_files_;
+std::map<size_t, shifter::strct::strct_state_file> xshifter::map_list_state_files_;
 
 std::map<intptr_t, XPLMCommandRef>    xshifter::mapCommands_;
 std::map<intptr_t, XPLMCommandRef>    xshifter::mapCmdCustomCommand_;
@@ -298,10 +298,13 @@ xshifter::pick_the_first_config_file ()
             {
               const auto lmbda_get_set_name = [&]()
               {
-                const bool we_have_custom_commands_at_set_level = strct_set.custom_commands.contains (shifter::g_shift_button_key_number);
-                const bool we_have_name_attribute_at_the_set_level = strct_set.custom_commands[shifter::g_shift_button_key_number].contains ("name");
+                // const bool we_have_custom_commands_at_set_level = strct_set.map_all_lines_and_their_split_commands.contains (shifter::g_shift_button_key_number);
+                // const bool we_have_name_attribute_at_the_set_level = strct_set.map_all_lines_and_their_split_commands[shifter::g_shift_button_key_number].contains ("name");
+                const bool we_have_custom_commands_at_set_level = strct_set.map_lines_metadata.contains (shifter::g_shift_button_key_number);
+                const bool we_have_name_attribute_at_the_set_level = strct_set.map_lines_metadata[shifter::g_shift_button_key_number].map_command_metadata.contains ("name");
                 if ( we_have_custom_commands_at_set_level && we_have_name_attribute_at_the_set_level )
-                  return std::format ("Set #{} - {:.30}", key_set_number, strct_set.custom_commands[shifter::g_shift_button_key_number]["name"]);
+                  return std::format ("Set #{} - {:.30}", key_set_number, strct_set.map_lines_metadata[shifter::g_shift_button_key_number].map_command_metadata["name"]);
+                  // return std::format ("Set #{} - {:.30}", key_set_number, strct_set.map_all_lines_and_their_split_commands[shifter::g_shift_button_key_number]["name"]);
 
                 return std::format ("Set #{}", key_set_number);
               };
@@ -368,6 +371,84 @@ xshifter::pick_the_first_config_file ()
 
   // --------------------
 
+  void xshifter::handle_dataref(shifter::strct::st_command_ref& inout_command)
+  {
+    // xshifter::s_current_command_button_type_ = (inout_command.map_command_metadata.contains (shifter::attrib_button_type)? inout_command.map_command_metadata[shifter::attrib_button_type]:shifter::button_type_tick);
+    xshifter::s_current_command_button_type_ = shifter::button_type_tick;
+
+    // init commend reference
+    if (!inout_command.dref)
+      utils::parse_dataref(inout_command );
+
+    if (inout_command.dref && inout_command.type == enums::command_type::dataref && !inout_command.vec_dref_values.empty() )
+    {
+      inout_command.dref_last_value_index = (inout_command.vec_dref_values.size() > (inout_command.dref_last_value_index + 1)) ? ++inout_command.dref_last_value_index : 0;
+
+      // make sure we are in <vector> range, and assign the next value into x-plane dataref
+      if (inout_command.vec_dref_values.size() > inout_command.dref_last_value_index)
+      {
+        switch (inout_command.dref_type)
+        {
+          case xplmType_Int:
+          {
+            const auto val = static_cast<int>( inout_command.vec_dref_values.at(inout_command.dref_last_value_index));
+            XPLMSetDatai( inout_command.dref, val);
+          }
+          break;
+          case xplmType_Float:
+          {
+            const auto val = static_cast<float>( inout_command.vec_dref_values.at(inout_command.dref_last_value_index));
+            XPLMSetDataf( inout_command.dref, val);
+          }
+          break;
+          case xplmType_Float|xplmType_Double:
+          {
+            const auto val = static_cast<double>( inout_command.vec_dref_values.at(inout_command.dref_last_value_index));
+            XPLMSetDatad( inout_command.dref, val);
+          }
+          break;
+          default:
+          break;
+        }
+      }
+    }
+
+
+  }
+
+  // --------------------
+
+  void
+  xshifter::handle_command(shifter::strct::st_command_ref& inout_command)
+  {
+    xshifter::s_current_command_button_type_ = (inout_command.map_command_metadata.contains (shifter::attrib_button_type)? inout_command.map_command_metadata[shifter::attrib_button_type]:shifter::button_type_tick);
+
+    // init commend reference
+    if (!inout_command.cref)
+      utils::parse_command(inout_command );
+
+    xshifter::s_current_command_ref_ = inout_command.cref;
+
+    if (xshifter::s_current_command_ref_)
+    {
+      XPLMCommandOnce(xshifter::s_current_command_ref_); // tick
+
+      if (s_current_command_button_type_ == shifter::button_type_tick )
+      {
+        xshifter::s_current_command_ref_ = nullptr;
+      }
+      else if (s_current_command_button_type_ == shifter::button_type_hold)
+      {
+        shifter::Timer::start (xshifter::s_hold_timer);
+        xshifter::s_hold_timer_last_tick = xshifter::s_hold_timer;
+      }
+    } // end if command_ref is valid
+
+    // end handle_command
+  }
+
+  // --------------------
+
   int
   xshifter::shift_cmd_custom_button_handler (XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void *inRefcon)
   {
@@ -381,33 +462,24 @@ xshifter::pick_the_first_config_file ()
       {
         auto p_state = &xshifter::map_states_[xshifter::active_file_id];
 
-        // check vector has commands
-        if ( ! p_state->map_command_sets_[active_set_id].custom_commands.empty ()
-            && p_state->map_command_sets_[active_set_id].custom_commands.contains ( command_number ) )
+        // check <map> container has commands
+        // if ( ! p_state->map_command_sets_[active_set_id].map_all_lines_and_their_split_commands.empty ()
+        //     && p_state->map_command_sets_[active_set_id].map_all_lines_and_their_split_commands.contains ( command_number ) )
+        if ( ! p_state->map_command_sets_[active_set_id].map_lines_metadata.empty ()
+            && p_state->map_command_sets_[active_set_id].map_lines_metadata.contains ( command_number ) )
         {
-          auto meta_command_map_ptr = &p_state->map_command_sets_[active_set_id].custom_commands[command_number];
-          if (meta_command_map_ptr && !meta_command_map_ptr->empty () && meta_command_map_ptr->contains (shifter::attrib_cmd))
+          // auto meta_command_map_ptr = &p_state->map_command_sets_[active_set_id].map_all_lines_and_their_split_commands[command_number];
+          auto meta_command_map_ptr = &p_state->map_command_sets_[active_set_id].map_lines_metadata[command_number];
+
+          // Handle the command or dataref based command
+          if (meta_command_map_ptr && !meta_command_map_ptr->map_command_metadata.empty ())
           {
-            const auto& command_ptr = (*meta_command_map_ptr)[shifter::attrib_cmd];
-            xshifter::s_current_command_button_type_ = (meta_command_map_ptr->contains (shifter::attrib_button_type)? (*meta_command_map_ptr)[shifter::attrib_button_type]:shifter::button_type_tick);
-
-            xshifter::s_current_command_ref_ = XPLMFindCommand(command_ptr.c_str() );
-
-            if (xshifter::s_current_command_ref_)
-            {
-              XPLMCommandOnce(xshifter::s_current_command_ref_); // tick
-
-              if (s_current_command_button_type_ == shifter::button_type_tick )
-              {
-                xshifter::s_current_command_ref_ = nullptr;
-              }
-              else if (s_current_command_button_type_ == shifter::button_type_hold)
-              {
-                shifter::Timer::start (xshifter::s_hold_timer);
-                xshifter::s_hold_timer_last_tick = xshifter::s_hold_timer;
-              }
-            } // end if command_ref is valid
+            if (meta_command_map_ptr->map_command_metadata.contains (shifter::attrib_cmd))
+              handle_command((*meta_command_map_ptr));
+            else if (meta_command_map_ptr->map_command_metadata.contains (shifter::attrib_drf))
+              handle_dataref((*meta_command_map_ptr));
           } // end if we have "cmd" command
+
         } // end if the command number is in the set
       } // end if "set_id" is in the "set container"
     } // END xplm_CommandBegin

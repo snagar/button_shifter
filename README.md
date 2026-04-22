@@ -14,6 +14,8 @@ As of this release, the plugin supports up to **6 (six)** shift buttons, each de
 As of v0.2, the plugin will enable the first config file in the list (ordered by file name), and the first "set."
 Make sure that your "favorite" or "default" configuration file will be sorted as the first one in the list.
 
+As of v0.3, there is basic support for "dataref" parameters. Only supports scalar datarefs, does not support arrays or byte based dataresfs.
+
 ### Donation
 
 If you find this plugin useful, please consider [donating via this link](https://www.paypal.com/donate?token=b7oey_0CJMomwEojP1E6D0EV94udhoc79YHpYXPlkSdDICgWmwxRloH4QsXeKd39m1qvvBnZx50eLqSh).
@@ -98,6 +100,7 @@ Every command line should include a button type: **hold** or **tick**.
 cmd=sim/autopilot/heading_up    |button_type=hold  
 cmd=sim/autopilot/heading_down  |button_type=hold  
 cmd=sim/autopilot/heading_sync  |button_type=tick
+drf=sim/cockpit2/autopilot/alt_vvi_is_showing_vvi | button_type=tick | values=0,1
 ```
 
 In this example

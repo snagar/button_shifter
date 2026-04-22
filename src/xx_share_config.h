@@ -40,6 +40,7 @@ constexpr static int XP12_COMPATIBILITY = 12;
 static XPLMDrawingPhase  s_drawPhase = xplm_Phase_Window;
 
 static constexpr auto attrib_cmd         = "cmd";
+static constexpr auto attrib_drf         = "drf";
 static constexpr auto attrib_button_type = "button_type";
 static constexpr auto button_type_hold   = "hold";
 static constexpr auto button_type_tick   = "tick";
@@ -52,7 +53,6 @@ static constexpr auto tick_accelerate_2   = 10.0f; // milli
 static constexpr auto timer_delta_for_the_first_acceleration_1  = 1000.0f; // milli
 static constexpr auto timer_delta_for_the_second_acceleration_2 = 3000.0f; // milli
 
-// static std::deque<std::string> s_deque_commands;
 
 namespace enums
 {
@@ -93,28 +93,53 @@ typedef enum class menuIdRefs_def
   COUNT
 }menuIdRefs;
 
+enum class command_type : uint8_t
+{
+  undefined = 0,
+  command,
+  dataref
+};
+
 }
 
 // ---- END enums namespace
 
 namespace strct
 {
-  typedef struct st_state_file
+  struct strct_state_file
   {
     shifter::enums::menuIdRefs  seq;
     std::string file_name;
     std::string path_only;
     std::string full_file_path;
-    st_state_file () = default;
-    st_state_file (const int i, const std::string & in_file_name, const std::string & in_path, const std::string & in_full_file_path)
+    strct_state_file () = default;
+    strct_state_file (const int i, const std::string & in_file_name, const std::string & in_path, const std::string & in_full_file_path)
     {
       seq = shifter::enums::menuIdRefs::STATE_0;
       file_name = in_file_name;
       path_only = in_path;
       full_file_path = in_full_file_path;
     };
-  } strct_state_file;
+  } ;
 
+  struct st_command_ref
+  {
+    // type
+    enums::command_type type = enums::command_type::undefined;
+
+    // raw split line data
+    std::map<std::string, std::string> map_command_metadata;
+
+    // used with command line type
+    XPLMCommandRef cref {nullptr}; // holds the reference to a command
+
+    // used with dataref (drf) command type
+    XPLMDataRef dref {nullptr}; // holds the value from "XPLMFindDataRef()" function
+    XPLMDataTypeID dref_type; // XPLMGetDataRefTypes (XPLMDataRef)
+    std::vector<double> vec_dref_values {}; // v0.3 will hold values only if the "custom_commands" has a "dref" key.
+    size_t dref_last_value_index{ static_cast<size_t>(-1) }; // v0.3
+
+  };
 
   struct st_custom_commands_set
   {
@@ -125,8 +150,9 @@ namespace strct
 
     // Commands will be stored as a map of vectores for future expandability.
     // The topic command will be stored as key: "100". We only allow 10 custom commands.
-    // std::map<int, std::vector<std::string> > custom_commands;
-    std::map<int, std::map<std::string, std::string> > custom_commands;
+    // std::map<int, std::map<std::string, std::string> > map_all_lines_and_their_split_commands;
+    std::map<int, st_command_ref> map_lines_metadata;
+
     st_custom_commands_set () = default;
 
     void reset_ui_info()

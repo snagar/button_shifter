@@ -63,15 +63,26 @@ utils::write_log (const std::string &text)
   g_logFile.flush (); // ensure it is written immediately
 }
 
-bool utils::is_number(std::string_view s, double &out_value)
+bool utils::is_number(const std::string_view s, double &out_value)
 {
   out_value = 0.0;
+
+  #ifdef MAC
+  if ( utils::is_number_v2 (s) )
+  {
+    out_value = utils::stringToNumber <double>(s.data ());
+    return true;
+  }
+  return false;
+  #else
   // The compiler automatically chooses the floating-point overload
   auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), out_value);
 
   // ec == std::errc{} means "No Error"
   // ptr == s.data() + s.size() means "We consumed the whole string"
   return ec == std::errc{} && ptr == s.data() + s.size();
+
+  #endif
 }
 
 bool
@@ -240,6 +251,47 @@ bool utils::parse_command(shifter::strct::st_command_ref& inout_command_strct)
 }
 
 // --------------------------
+
+bool
+utils::is_number_v2 (const std::string_view &s)
+{
+  // bool validNumber = true;
+
+  bool plus_and_minus_signs_are_allowed = true; // as long as we did not find digits, we can use "+/-" signs
+
+  bool foundDecimalDot = false;
+
+  auto it = s.begin();
+  while (it != s.end() )
+  {
+    // number is legal if starts with "+/-" signs
+    if (plus_and_minus_signs_are_allowed && (*it) == '-')  //(((*it) == '+') || ((*it) == '-')))
+    {
+      plus_and_minus_signs_are_allowed = false; // only one sign is allowed at the beginning
+      ++it;
+    }
+    else if ((*it) == '.' && !foundDecimalDot)
+    {
+      foundDecimalDot     = true;
+      plus_and_minus_signs_are_allowed = false;
+      ++it;
+    }
+    else if (::isdigit(*it))
+    {
+      plus_and_minus_signs_are_allowed = false;
+      ++it;
+    }
+    else
+    {
+      // validNumber = false;
+      return false;
+    }
+  } // end while
+
+  return !s.empty() && it == s.end();
+
+}
+
 // --------------------------
 // --------------------------
 // --------------------------

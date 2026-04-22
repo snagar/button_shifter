@@ -78,6 +78,39 @@ namespace shifter
     // --------------------------
     static bool parse_dataref (shifter::strct::st_command_ref & inout_command_strct);
     static bool parse_command (shifter::strct::st_command_ref & inout_command_strct);
+
+    // --------------------------
+
+    // Number to String Template - WITH precision formatting
+    template<typename N>
+    static std::string formatNumber(N inVal, const int precision = 0)
+    {
+      std::ostringstream o;
+      if (!(o << std::setiosflags(std::ios::fixed) << std::setprecision(precision) << inVal))
+      {
+        return "";
+      }
+
+      return o.str();
+    }
+
+    // --------------------------
+    // Convert String into Number
+    template<typename N>
+    static N stringToNumber(const std::string& s)
+    {
+      std::istringstream is(s);
+      N                  n;
+      is >> n;
+
+      return n;
+    }
+
+    // --------------------------
+    // Is string has only these characters - "0123456789.", and no more than 1 "." !!!
+    static bool is_number_v2(const std::string_view& s);
+
+
   };
 } // shifter
 

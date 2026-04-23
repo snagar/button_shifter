@@ -67,13 +67,6 @@ bool utils::is_number(const std::string_view s, double &out_value)
 {
   out_value = 0.0;
 
-  // if ( utils::is_number_v2 (s) )
-  // {
-  //   out_value = utils::stringToNumber <double>(s.data ());
-  //   return true;
-  // }
-  // return false;
-
   #ifdef MAC
   if ( utils::is_number_v2 (s) )
   {

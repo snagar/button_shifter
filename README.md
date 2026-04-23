@@ -1,7 +1,7 @@
 # Button Shifter Plugin
 
 > Written by Saar N.
-> Version v0.2
+> Version v0.3
 
 Thank you for trying the **Button Shifter** plugin.
 
@@ -14,7 +14,7 @@ As of this release, the plugin supports up to **6 (six)** shift buttons, each de
 As of v0.2, the plugin will enable the first config file in the list (ordered by file name), and the first "set."
 Make sure that your "favorite" or "default" configuration file will be sorted as the first one in the list.
 
-As of v0.3, there is basic support for "dataref" parameters. Only supports scalar datarefs, does not support arrays or byte based dataresfs.
+As of v0.3, the system includes initial support for dataref parameters. This implementation is limited to scalar datarefs and does not yet support array or byte-based datarefs.
 
 ### Donation
 
